@@ -6,7 +6,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import service.Customer;
 import service.TicketPool;
+import service.Vendor;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -20,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequestMapping("/api/tickets")
 public class TicketingSystemApplication {
 
-    private final TicketPool ticketPool = new TicketPool(10); // Max capacity is 10 tickets
+    private final TicketPool ticketPool = new TicketPool(1000); // Max capacity is 10 tickets
 
     public static void main(String[] args) {
         SpringApplication.run(TicketingSystemApplication.class, args);
@@ -44,6 +46,30 @@ public class TicketingSystemApplication {
     @GetMapping
     public ResponseEntity<List<String>> viewTickets() {
         return ResponseEntity.ok(ticketPool.getTickets());
+    }
+    @GetMapping("/start-system")
+    public String startSystem() {
+        int totalTickets = 100;
+        int ticketReleaseRate = 1000; // 1 second
+        int customerRetrievalRate = 2000; // 2 seconds
+        int maxCapacity = 50;
+
+
+// Initialize the TicketPool
+        ticketPool.setMaxTicketCapacity(maxCapacity);
+
+        // Start Vendors
+        Vendor.startVendors(ticketPool, 5, totalTickets, ticketReleaseRate);
+
+        // Start Customers
+        Customer.startCustomers(ticketPool, 5, customerRetrievalRate, 10);
+
+        return "Ticketing system started!";
+    }
+
+    @GetMapping("/status")
+    public String getStatus() {
+        return "Current Ticket Pool Size: " + ticketPool.getSize();
     }
 
 }
